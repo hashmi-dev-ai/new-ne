@@ -1,45 +1,98 @@
 # This config was automatically generated from your source code
 # Stacks detected: deps:node:.
 version: 2.1
-orbs:
-  node: circleci/node@5
+
 jobs:
-  build-node:
-    # Build node project
-    executor: node/default
+  build:
+    machine:
+      image: ubuntu-2204:202406-01
     steps:
       - checkout
-      - node/install-packages:
-          pkg-manager: npm
       - run:
-          name: Install dependencies
-          command: cd . && npm install
+          name: Install aws dependencies
+          command: |
+            sudo apt-get update
+            sudo apt install python3-pip
+            sudo pip3 install awsebcli --upgrade
+
       - run:
-          name: Build
-          command: npm run build
-      - run:
-          name: Create the ~/artifacts directory if it doesn't exist
-          command: mkdir -p ~/artifacts
-      # Copy output to artifacts dir
-      - run:
-          name: Copy artifacts
-          command: cp -R build dist public .output .next .docusaurus ~/artifacts 2>/dev/null || true
-      - store_artifacts:
-          path: ~/artifacts
-          destination: node-build
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
+          name: Install node
+          command: cd . && npm install && npm run build
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  test:
+    machine:
+      image: ubuntu-2204:202406-01
     steps:
-      # Replace this with steps to deploy to users
-      - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+      - attach_workspace:
+          at: .
+      - checkout
+      - run: cd . && npm run test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+deploy:
+  machine:
+    image: ubuntu-2204:202406-01
+  steps:
+    - attach_workspace:
+        at: .
+    - checkout
+    - run: aws s3 sync ./build s3://ci-cd-example-bucket
+
 workflows:
   build:
     jobs:
-      - build-node
-    # - deploy:
-    #     requires:
-    #       - build-node
+      - build
+      - test:
+        requires:
+          - build
+      # - deploy :
+      #   requires:
+      #     - test
+# orbs:
+#   node: circleci/node@5
+# jobs:
+#   build-node:
+#     # Build node project
+#     executor: node/default
+#     steps:
+#       - checkout
+#       - node/install-packages:
+#           pkg-manager: npm
+#       - run:
+#           name: Install dependencies
+#           command: cd . && npm install
+#       - run:
+#           name: Build
+#           command: npm run build
+#       - run:
+#           name: Create the ~/artifacts directory if it doesn't exist
+#           command: mkdir -p ~/artifacts
+#       # Copy output to artifacts dir
+#       - run:
+#           name: Copy artifacts
+#           command: cp -R build dist public .output .next .docusaurus ~/artifacts 2>/dev/null || true
+#       - store_artifacts:
+#           path: ~/artifacts
+#           destination: node-build
+#   deploy:
+#     # This is an example deploy job, not actually used by the workflow
+#     docker:
+#       - image: cimg/base:stable
+#     steps:
+#       # Replace this with steps to deploy to users
+#       - run:
+#           name: deploy
+#           command: '#e.g. ./deploy.sh'
+# workflows:
+#   build:
+#     jobs:
+#       - build-node
+#     # - deploy:
+#     #     requires:
+#     #       - build-node
