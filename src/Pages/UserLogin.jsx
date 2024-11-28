@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SupabaseClient } from "../supabase";
-const Login = () => {
+const UserLogin = () => {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     email: "",
@@ -91,4 +91,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default UserLogin;

@@ -9,14 +9,14 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install aws dependencies
+          name: Install aws dependencies  #this is for aws s3 dependency
           command: |
             sudo apt-get update
             sudo apt install python3-pip
             sudo pip3 install awsebcli --upgrade
 
       - run:
-          name: Install node
+          name: Install node    #to install the nodejs library and build
           command: cd . && npm install && npm run build
 
       - persist_to_workspace:
